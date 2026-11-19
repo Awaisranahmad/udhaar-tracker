@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Udhaar Tracker</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Udhaar Tracker</h1>
+    <p class="tagline">Khata-style expense &amp; udhaar ledger &middot; PKR</p>
+    <nav class="tabs" id="tabs" aria-label="Sections">
+      <button data-tab="dashboard" class="active">Dashboard</button>
+      <button data-tab="people">People</button>
+      <button data-tab="expenses">Expenses</button>
+      <button data-tab="balances">Udhaar / Balances</button>
+      <button data-tab="budgets">Budgets</button>
+      <button data-tab="recurring">Recurring</button>
+    </nav>
+  </header>
+
+  <main>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <section id="tab-dashboard" class="tab-panel active">
+      <h2>Dashboard <span id="dash-month" class="muted"></span></h2>
+      <div class="cards" id="dash-cards"></div>
+      <h3>Monthly spend by category</h3>
+      <div id="dash-categories"></div>
+      <h3>Top debtors</h3>
+      <div id="dash-debtors"></div>
+      <h3>Budget warnings</h3>
+      <div id="dash-budgets"></div>
+      <h3>Udhaar aging</h3>
+      <div id="dash-aging"></div>
+      <h3>Due soon / overdue</h3>
+      <div id="dash-due"></div>
+    </section>
+
+    <section id="tab-people" class="tab-panel">
+      <h2>People</h2>
+      <div class="row">
+        <input id="people-search" type="search" placeholder="Search name or phone..." aria-label="Search people">
+      </div>
+      <form id="person-form" class="form">
+        <input name="name" placeholder="Name *" maxlength="100" required>
+        <input name="phone" placeholder="Phone (e.g. 03017155932)" maxlength="20">
+        <input name="email" type="email" placeholder="Email" maxlength="120">
+        <input name="notes" placeholder="Notes" maxlength="500">
+        <button type="submit">Add person</button>
+      </form>
+      <ul id="people-list" class="list"></ul>
+    </section>
+
+    <section id="tab-expenses" class="tab-panel">
+      <h2>Add expense</h2>
+      <form id="expense-form" class="form">
+        <input name="title" placeholder="Title * (e.g. Dinner at mess)" maxlength="200" required>
+        <select name="category" id="expense-category" required></select>
+        <input name="amount" type="number" step="0.01" min="0.01" max="10000000" placeholder="Amount (PKR) *" required>
+        <select name="payer_id" id="expense-payer" required></select>
+        <input name="expense_date" type="date" id="expense-date" required>
+        <input name="due_date" type="date" id="expense-due-date" placeholder="Due date (optional)">
+        <input name="notes" placeholder="Notes" maxlength="500">
+        <fieldset>
+          <legend>Split between (leave all unchecked = paid by payer only)</legend>
+          <div id="split-people" class="checkboxes"></div>
+          <label><input type="checkbox" id="split-equal" checked> Split equally</label>
+        </fieldset>
+        <button type="submit">Add expense</button>
+      </form>
+
+      <h2>Expenses</h2>
+      <div class="row filters">
+        <input id="exp-search" type="search" placeholder="Search title/notes..." aria-label="Search expenses">
+        <select id="exp-category-filter"><option value="">All categories</option></select>
+        <input id="exp-from" type="date" aria-label="From date">
+        <input id="exp-to" type="date" aria-label="To date">
+        <button id="exp-export" type="button">Export CSV</button>
+      </div>
+      <ul id="expenses-list" class="list"></ul>
+    </section>
+
+    <section id="tab-balances" class="tab-panel">
+      <h2>Udhaar / Balances</h2>
+      <div class="cards" id="balance-totals"></div>
+      <ul id="balances-list" class="list"></ul>
+      <h3>Record a settlement</h3>
+      <form id="settlement-form" class="form">
+        <select name="person_id" id="settlement-person" required></select>
+        <input name="amount" type="number" step="0.01" min="0.01" max="10000000" placeholder="Amount (PKR) *" required>
+        <select name="direction" required>
+          <option value="in">They paid me (in)</option>
+          <option value="out">I paid them (out)</option>
+        </select>
+        <select name="method">
+          <option value="cash">Cash</option>
+          <option value="bank">Bank</option>
+          <option value="jazzcash">JazzCash</option>
+          <option value="easypaisa">Easypaisa</option>
+          <option value="other">Other</option>
+        </select>
+        <input name="settlement_date" type="date" id="settlement-date" required>
+        <button type="submit">Record settlement</button>
+      </form>
+      <h3>Recent settlements</h3>
+      <ul id="settlements-list" class="list"></ul>
+      <p><button id="balances-export" type="button">Export balances CSV</button></p>
+    </section>
+
+    <section id="tab-budgets" class="tab-panel">
+      <h2>Monthly budgets</h2>
+      <form id="budget-form" class="form">
+        <select name="category" id="budget-category" required></select>
+        <input name="month" type="month" id="budget-month" required>
+        <input name="limit" type="number" step="0.01" min="0.01" max="10000000" placeholder="Limit (PKR) *" required>
+        <button type="submit">Save budget</button>
+      </form>
+      <ul id="budgets-list" class="list"></ul>
+    </section>
+
+    <section id="tab-recurring" class="tab-panel">
+      <h2>Recurring expenses</h2>
+      <form id="recurring-form" class="form">
+        <input name="title" placeholder="Title * (e.g. Mess bill)" maxlength="200" required>
+        <select name="category" id="recurring-category" required></select>
+        <input name="amount" type="number" step="0.01" min="0.01" max="10000000" placeholder="Amount (PKR) *" required>
+        <select name="payer_id" id="recurring-payer" required></select>
+        <select name="frequency" id="recurring-frequency" required>
+          <option value="monthly">Monthly</option>
+          <option value="weekly">Weekly</option>
+        </select>
+        <input name="day_of_month" type="number" min="1" max="31" placeholder="Day of month (1-31)" id="recurring-dom">
+        <input name="day_of_week" type="number" min="0" max="6" placeholder="Day of week (0=Sun..6=Sat)" id="recurring-dow" disabled>
+        <input name="next_due_date" type="date" required>
+        <button type="submit">Add recurring</button>
+      </form>
+      <p><button id="generate-due" type="button">Generate due expenses now</button></p>
+      <ul id="recurring-list" class="list"></ul>
+    </section>
+  </main>
+
+  <dialog id="invoice-dialog">
+    <h3 id="invoice-title">Invoice</h3>
+    <pre id="invoice-text"></pre>
+    <p><a id="invoice-whatsapp" href="#" target="_blank" rel="noopener">Send via WhatsApp</a></p>
+    <button id="invoice-close" type="button">Close</button>
+  </dialog>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
