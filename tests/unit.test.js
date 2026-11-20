@@ -26,6 +26,21 @@ test('money: validates PKR input and converts to exact paisa', () => {
   assert.equal(formatPkr(0), 'Rs 0.00');
 });
 
+test('money: valid 2-decimal amounts are not rejected by float rounding', () => {
+  // Regression: 19.99 * 100 is 1998.9999999999998 in binary floating point,
+  // so the old exact-integer check rejected these everyday amounts.
+  assert.equal(isValidMoneyInput(19.99), true);
+  assert.equal(isValidMoneyInput(0.29), true);
+  assert.equal(isValidMoneyInput(0.07), true);
+  assert.equal(isValidMoneyInput(499.95), true);
+  assert.equal(toPaisa(19.99), 1999);
+  assert.equal(toPaisa(0.29), 29);
+  // Still rejected: 3 decimals, and values too small to be even 1 paisa.
+  assert.equal(isValidMoneyInput(1.005), false);
+  assert.equal(isValidMoneyInput(0.001), false);
+  assert.equal(isValidMoneyInput(0.0000001), false);
+});
+
 test('dates: rejects impossible calendar dates', () => {
   assert.equal(isValidDateString('2026-02-30'), false);
   assert.equal(isValidDateString('2026-13-01'), false);
