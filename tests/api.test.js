@@ -137,6 +137,25 @@ test('expenses: validation rejects bad category, amount, date and unknown people
   assert.equal((await req(srv.base, 'POST', '/api/expenses', { ...base, splits: [] })).status, 400);
 });
 
+test('expenses: amounts like Rs 19.99 are accepted (float-rounding regression)', async () => {
+  // 19.99 * 100 is 1998.9999999999998 in binary floating point; the API
+  // must not reject this everyday amount with a 400.
+  // Uses a fresh person so later tests' balance totals are unaffected.
+  const person = await req(srv.base, 'POST', '/api/people', { name: 'Chai Tester' });
+  assert.equal(person.status, 201);
+  const r = await req(srv.base, 'POST', '/api/expenses', {
+    title: 'Chai 19.99',
+    category: 'food',
+    amount: 19.99,
+    payer_id: ids.self.id,
+    expense_date: '2026-10-20', // October: keeps November totals pinned by other tests intact
+    splits: [{ person_id: person.json.person.id }],
+  });
+  assert.equal(r.status, 201);
+  assert.equal(r.json.expense.amount_paisa, 1999);
+  assert.equal(r.json.expense.splits[0].amount_paisa, 1999);
+});
+
 test('expenses: search and filters work', async () => {
   const byText = await req(srv.base, 'GET', '/api/expenses?q=Mess%20dinner');
   assert.ok(byText.json.expenses.length >= 1);
