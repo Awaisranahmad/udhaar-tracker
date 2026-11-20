@@ -170,6 +170,19 @@ What is hardened in the code:
 If you find a security issue, please report it rather than exploiting it —
 see `SECURITY.md` if one exists in the repo, otherwise open an issue.
 
+## Changelog
+
+### 2026-11-20
+
+- **Bug fix: Rs 19.99-type amounts no longer rejected.** Money validation
+  used an exact `Math.round(value * 100) === value * 100` check, which
+  fails for valid 2-decimal amounts because of binary floating-point
+  rounding (`19.99 * 100` is `1998.9999999999998`, not `1999`), so the
+  API returned 400 for everyday amounts like Rs 19.99, Rs 0.29 or
+  Rs 0.07. The check now compares against the nearest whole paisa with a
+  tiny epsilon, and still rejects 3-decimal amounts (e.g. Rs 10.005) and
+  sub-paisa values. Covered by new unit + API regression tests.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
