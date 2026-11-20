@@ -11,8 +11,15 @@ const MAX_PKR = 10000000; // Rs 1 crore - sanity cap per single amount.
 function isValidMoneyInput(value) {
   if (typeof value !== 'number' || !Number.isFinite(value)) return false;
   if (value <= 0 || value > MAX_PKR) return false;
-  // At most 2 decimal places (paisa precision).
-  return Math.round(value * 100) === value * 100;
+  // At most 2 decimal places (paisa precision). Binary floating point makes
+  // an exact check fail for valid amounts: 19.99 * 100 is 1998.9999999999998,
+  // not 1999. Compare against the nearest whole paisa with a tiny epsilon
+  // so real 2-decimal amounts pass while 3-decimal ones (e.g. 10.005,
+  // which is ~0.5 paisa off) still fail.
+  const paisa = value * 100;
+  if (Math.abs(paisa - Math.round(paisa)) > 1e-6) return false;
+  // Must convert to at least 1 paisa (guards sub-paisa values like 0.0000001).
+  return Math.round(paisa) >= 1;
 }
 
 function toPaisa(pkr) {
